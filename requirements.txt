@@ -8,3 +8,4 @@ langchain-community
 langchain-groq
 chromadb
 requests
+pysqlite3-binary
