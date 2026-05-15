@@ -80,6 +80,7 @@ If the reviews do not contain enough information, say that clearly.
 """
 
     llm = ChatGroq(
+	groq_api_key=os.getenv("GROQ_API_KEY"),
         model="llama-3.1-8b-instant",
         temperature=0
     )
