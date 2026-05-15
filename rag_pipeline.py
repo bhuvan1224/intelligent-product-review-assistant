@@ -6,6 +6,12 @@ from data_preprocessing import load_reviews
 
 load_dotenv()
 
+try:
+    import streamlit as st
+    if "GROQ_API_KEY" in st.secrets:
+        os.environ["GROQ_API_KEY"] = st.secrets["GROQ_API_KEY"]
+except Exception:
+    pass
 
 def get_collection():
     client = chromadb.PersistentClient(path="vector_db")
