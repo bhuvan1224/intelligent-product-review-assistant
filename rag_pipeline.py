@@ -2,13 +2,35 @@ import os
 import chromadb
 from dotenv import load_dotenv
 from langchain_groq import ChatGroq
+from data_preprocessing import load_reviews
 
 load_dotenv()
 
 
-def retrieve_reviews(question, product=None):
+def get_collection():
     client = chromadb.PersistentClient(path="vector_db")
-    collection = client.get_collection(name="product_reviews")
+    collection = client.get_or_create_collection(name="product_reviews")
+
+    if collection.count() == 0:
+        df = load_reviews()
+
+        for index, row in df.iterrows():
+            collection.add(
+                documents=[row["review"]],
+                metadatas=[
+                    {
+                        "product": row["product"],
+                        "rating": int(row["rating"])
+                    }
+                ],
+                ids=[str(index)]
+            )
+
+    return collection
+
+
+def retrieve_reviews(question, product=None):
+    collection = get_collection()
 
     if product and product != "All":
         results = collection.query(
@@ -62,42 +84,5 @@ If the reviews do not contain enough information, say that clearly.
 
 
 if __name__ == "__main__":
-    answer = generate_answer(
-        "Is laptop battery good?",
-        product="Laptop"
-    )
-
+    answer = generate_answer("Is laptop battery good?", product="Laptop")
     print(answer)
-
-def retrieve_reviews(question, product=None, rating=None):
-    client = chromadb.PersistentClient(path="vector_db")
-    collection = client.get_collection(name="product_reviews")
-
-    where_filter = {}
-
-    if product:
-        where_filter["product"] = product
-
-    if rating:
-        where_filter["rating"] = rating
-
-    if where_filter:
-        results = collection.query(
-            query_texts=[question],
-            n_results=3,
-            where=where_filter
-        )
-    else:
-        results = collection.query(
-            query_texts=[question],
-            n_results=3
-        )
-
-    return results
-
-
-if __name__ == "__main__":
-    output = retrieve_reviews("Is laptop battery good?", product="Laptop")
-
-    print(output["documents"])
-    print(output["metadatas"])
